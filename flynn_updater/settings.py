@@ -128,13 +128,6 @@ ROOT_DIR = environ.Path(__file__) - 2
 PUBLIC_ROOT = str(ROOT_DIR('public'))
 STATIC_ROOT = str(ROOT_DIR('assets'))
 
-# Celery settings
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'django-cache'
-CELERYBEAT_SCHEDULE = {}
-
 # Load AWS config from ENV
 dotenv.load()
 env = environ.Env()
@@ -152,6 +145,13 @@ TIMEZONE = env('TIMEZONE', default='UTC')
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 DEBUG = env('DEBUG', default=False)
 DJANGO_LOG_LEVEL = env('DJANGO_LOG_LEVEL', default='INFO')
+
+# Celery settings
+CELERY_BROKER_URL = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERYBEAT_SCHEDULE = {}
 
 # Logging
 CELERYD_REDIRECT_STDOUTS_LEVEL = DJANGO_LOG_LEVEL
