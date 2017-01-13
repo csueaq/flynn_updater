@@ -17,12 +17,17 @@ def execute(cmd, shell=True):
     return output
 
 
-def flynn_init():
+def flynn_cli_init():
     install = 'L=/usr/local/bin/flynn && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L'
     setup = 'flynn cluster add -p %s default %s %s' % (
         settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
-    execute(install)
-    execute(setup)
+    if not execute('which flynn')[0]:
+        execute(install)
+        execute(setup)
+
+
+def flynn_cli_update():
+    execute('flynn update')
 
 
 def get_apps():

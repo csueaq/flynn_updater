@@ -38,7 +38,12 @@ worker.conf.beat_schedule = {
         'task': 'flynn_s3_store',
         'schedule': 300.0,
         'args': ()
-    }
+    },
+    'Flynn CLI update': {
+        'task': 'flynn_cli_update',
+        'schedule': crontab(hour=0, minute=30, day_of_week='*'),
+        'args': ()
+    },
 }
 
 
@@ -56,7 +61,7 @@ def flynn_dns_update():
 
 @worker.task(name='flynn_gc')
 def flynn_gc():
-    flynn_init()
+    flynn_cli_init()
     apps = get_apps()
     addrs = get_instance_private_addr(get_instances(settings.AWS_AUTOSCALING_GROUP))
 
@@ -77,7 +82,7 @@ def flynn_gc():
 
 @worker.task(name='flynn_s3_store')
 def flynn_s3_store():
-    flynn_init()
+    flynn_cli_init()
     blobstore = get_app_env('blobstore')
     s3_enabled = False
     for var in blobstore:
@@ -89,3 +94,8 @@ def flynn_s3_store():
                      % (settings.AWS_DEFAULT_REGION, settings.S3_BLOBSTORE)]
         set_app_env('blobstore', s3_params)
         execute('flynn -a blobstore run /bin/flynn-blobstore migrate --delete')
+
+
+@worker.task(name='flynn_cli_update')
+def flynn_cli_update():
+    flynn_cli_update()
