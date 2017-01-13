@@ -1,5 +1,7 @@
 import subprocess
 import json
+from django.conf import settings
+from celery.utils.log import logger
 
 
 def execute(cmd, shell=True):
@@ -18,7 +20,7 @@ def execute(cmd, shell=True):
 def flynn_init():
     install = 'L=/usr/local/bin/flynn && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L'
     setup = 'flynn cluster add -p %s default %s %s' % (
-        settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, setttings.FLYNN_PIN)
+        settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
     execute(install)
     execute(setup)
 
@@ -43,5 +45,5 @@ def get_app_env(app):
     return execute('flynn -a %s env' % app)
 
 
-def set_app_env(app, envs: list = []):
+def set_app_env(app, envs: list):
     return execute('flynn -a %s env set %s' % (app, envs))

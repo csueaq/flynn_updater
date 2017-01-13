@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
+
 from celery import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
-from django.conf import settings
 from flynn_updater.core.utils import *
 from flynn_updater.core.shell import *
 from flynn_updater.core.ssh import *
@@ -62,7 +62,7 @@ def flynn_gc():
 
     for app in apps:
         releases = get_app_release(app)
-        current = get_app_current_relase(app)
+        current = get_app_current_release(app)
         for release in releases:
             if not release == current:
                 delete_app_release(app, release)

@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'mpf*!re@^s@@=++((gp34v067#qu)9bmzb6n!k)c3x&j60vd33'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -123,10 +123,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
-
-ROOT_DIR = environ.Path(__file__) - 2
-PUBLIC_ROOT = str(ROOT_DIR('public'))
-STATIC_ROOT = str(ROOT_DIR('assets'))
 
 # Load AWS config from ENV
 dotenv.load()
