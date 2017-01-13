@@ -145,6 +145,7 @@ TIMEZONE = env('TIMEZONE', default='UTC')
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 DEBUG = env('DEBUG', default=False)
 DJANGO_LOG_LEVEL = env('DJANGO_LOG_LEVEL', default='INFO')
+S3_BLOBSTORE = env('S3_BLOBSTORE')
 
 # Celery settings
 CELERY_BROKER_URL = REDIS_URL

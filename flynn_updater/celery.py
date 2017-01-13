@@ -34,6 +34,11 @@ worker.conf.beat_schedule = {
         'schedule': crontab(hour=7, minute=30, day_of_week=6),
         'args': ()
     },
+    'Flynn S3 datastore': {
+        'task': 'flynn_s3_store',
+        'schedule': 300.0,
+        'args': ()
+    }
 }
 
 
@@ -51,13 +56,7 @@ def flynn_dns_update():
 
 @worker.task(name='flynn_gc')
 def flynn_gc():
-    install = 'L=/usr/local/bin/flynn && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L'
-    setup = 'flynn cluster add -p %s default %s %s' % (
-        settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, setttings.FLYNN_PIN)
-
-    execute(install)
-    execute(setup)
-
+    flynn_init()
     apps = get_apps()
     addrs = get_instance_private_addr(get_instances(settings.AWS_AUTOSCALING_GROUP))
 
@@ -74,3 +73,19 @@ def flynn_gc():
         ssh_connect(host, settings.SSH_USER, settings.SSH_KEY)
         ssh_execute("sudo flynn-host volume gc")
         ssh_close()
+
+
+@worker.task(name='flynn_s3_store')
+def flynn_s3_store():
+    flynn_init()
+    blobstore = get_app_env('blobstore')
+    s3_enabled = False
+    for var in blobstore:
+        if 'DEFAULT_BACKEND=s3main' in var:
+            s3_enabled = True
+
+    if not s3_enabled:
+        s3_params = ['DEFAULT_BACKEND=s3main', 'BACKEND_S3MAIN=backend=s3 region=%s bucket=%s ec2_role=true'
+                     % (settings.AWS_DEFAULT_REGION, settings.S3_BLOBSTORE)]
+        set_app_env('blobstore', s3_params)
+        execute('flynn -a blobstore run /bin/flynn-blobstore migrate --delete')
