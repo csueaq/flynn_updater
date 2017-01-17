@@ -90,8 +90,8 @@ def flynn_s3_store():
             s3_enabled = True
 
     if not s3_enabled:
-        s3_params = ['DEFAULT_BACKEND=s3main', 'BACKEND_S3MAIN=backend=s3 region=%s bucket=%s ec2_role=true'
-                     % (settings.AWS_DEFAULT_REGION, settings.S3_BLOBSTORE)]
+        s3_params = ['BACKEND_S3MAIN="backend=s3 region=%s bucket=%s ec2_role=true"'
+                     % (settings.AWS_DEFAULT_REGION, settings.S3_BLOBSTORE), 'DEFAULT_BACKEND=s3main']
         set_app_env('blobstore', s3_params)
         execute('flynn -a blobstore run /bin/flynn-blobstore migrate --delete')
 

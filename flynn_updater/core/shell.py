@@ -51,4 +51,5 @@ def get_app_env(app):
 
 
 def set_app_env(app, envs: list):
-    return execute('flynn -a %s env set %s' % (app, envs))
+    envars = ' \\'.join(envs)
+    return execute('flynn -a %s env set %s' % (app, envars))
