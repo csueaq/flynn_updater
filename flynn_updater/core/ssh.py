@@ -1,26 +1,29 @@
 import paramiko
+import io
 from celery.utils.log import logger
 
 ssh = paramiko.SSHClient()
-ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy)
+ssh.load_system_host_keys()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 
 def ssh_connect(host, user, key):
+    private_key = paramiko.RSAKey.from_private_key(io.StringIO(key))
     try:
-        ssh.connect(host, username=user, pkey=key)
+        ssh.connect(host, username=user, pkey=private_key)
     except Exception as error:
         logger.error(error)
 
 
 def ssh_execute(command):
-    stdout, stderr = None
+    stdin, stdout, stderr = None
     try:
-        stdout, stderr = ssh.exec_command(command)
+        stdin, stdout, stderr = ssh.exec_command(command)
     except Exception as error:
         logger.error(error)
-        logger.error(stderr)
-        return stderr
-    return stdout
+        logger.error(stderr.readlines())
+        return [err.replace("\n", '') for err in stderr.readlines()]
+    return [out.replace("\n", '') for out in stdout.readlines()]
 
 
 def ssh_close():

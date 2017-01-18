@@ -71,7 +71,9 @@ def flynn_dns_update():
 def flynn_gc():
     flynn_cli_init()
     apps = get_apps()
-    addrs = get_instance_private_addr(get_instances(settings.AWS_AUTOSCALING_GROUP))
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_private_addr(running_instances)
 
     for app in apps:
         releases = get_app_release(app)
@@ -84,7 +86,7 @@ def flynn_gc():
     for host in addrs:
         logger.info('Volume cleanup: %s' % host)
         ssh_connect(host, settings.SSH_USER, settings.SSH_KEY)
-        ssh_execute("sudo flynn-host volume gc")
+        ssh_execute('sudo flynn-host volume gc')
         ssh_close()
 
 
