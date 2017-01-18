@@ -16,14 +16,11 @@ def ssh_connect(host, user, key):
 
 
 def ssh_execute(command):
-    stdin, stdout, stderr = None
     try:
         stdin, stdout, stderr = ssh.exec_command(command)
     except Exception as error:
         logger.error(error)
-        logger.error(stderr.readlines())
-        return [err.replace("\n", '') for err in stderr.readlines()]
-    return [out.replace("\n", '') for out in stdout.readlines()]
+    return [out.replace("\n", '') for out in stdout.readlines()], [err.replace("\n", '') for err in stderr.readlines()]
 
 
 def ssh_close():
