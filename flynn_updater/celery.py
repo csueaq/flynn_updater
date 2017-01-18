@@ -86,7 +86,9 @@ def flynn_gc():
     for host in addrs:
         logger.info('Volume cleanup: %s' % host)
         ssh_connect(host, settings.SSH_USER, settings.SSH_KEY)
-        ssh_execute('sudo flynn-host volume gc')
+        stdout, stder = ssh_execute('sudo flynn-host volume gc')
+        logger.info('Volume deleted: %s' % stdout)
+        logger.error('Volume delete error: %s' % stder)
         ssh_close()
 
 
