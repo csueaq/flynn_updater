@@ -30,6 +30,11 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
+    'Flynn remote dead node': {
+        'task': 'flynn_demote_dead_node',
+        'schedule': 1800.0,
+        'args': ()
+    },
     'Flynn garbage collection': {
         'task': 'flynn_gc',
         'schedule': crontab(hour=7, minute=30, day_of_week=6),
@@ -81,6 +86,18 @@ def flynn_gc():
         ssh_connect(host, settings.SSH_USER, settings.SSH_KEY)
         ssh_execute("sudo flynn-host volume gc")
         ssh_close()
+
+
+@worker.task(name='flynn_demote_dead_node')
+def flynn_demote_dead_node():
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    dead_instances = get_instances_by_state(asg_instances, 'terminated')
+    for dead_instance in dead_instances:
+        for running_instance in running_instances:
+            ssh_connect(get_instance_private_addr([running_instance])[0], settings.SSH_USER, settings.SSH_KEY)
+            ssh_execute("sudo flynn-host demote --force %s" % get_instance_private_addr([dead_instance])[0])
+            ssh_close()
 
 
 @worker.task(name='flynn_s3_store')
