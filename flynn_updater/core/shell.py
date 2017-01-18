@@ -18,7 +18,7 @@ def execute(cmd, shell=True):
 
 def flynn_cli_init():
     install = 'L=%s && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L' % settings.FLYNN_PATH
-    setup = '%s cluster add -p %s default %s %s' % (settings.FLYNN_PATH, settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
+    setup = '%s cluster add -p %s default %s %s' % (settings.FLYNN_PATH, settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY)
     if not execute('ls %s' % settings.FLYNN_PATH)[0]:
         execute(install)
         execute(setup)
