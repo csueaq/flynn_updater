@@ -9,6 +9,7 @@ Django==1.10
 django-celery-beat==1.0.1
 django-celery-results==1.0.1
 django-environ==0.4.1
+django-extensions==1.7.5
 docutils==0.13.1
 idna==2.2
 jmespath==0.9.0
