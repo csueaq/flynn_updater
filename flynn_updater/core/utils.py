@@ -14,6 +14,18 @@ def get_instances(asg_id: list):
     return asg_instances
 
 
+def get_instance_state(instance):
+    return ec2.Instance(instance['InstanceId']).state
+
+
+def get_instances_by_state(instances: list, state: str = 'running'):
+    instances_by_state = []
+    for instance in instances:
+        if state in get_instance_state(instance)['Name']:
+            instances_by_state.append(instance)
+    return instances_by_state
+
+
 def get_instance_public_addr(instances: list):
     instances_addr = []
     for instance in instances:
@@ -47,10 +59,10 @@ def dns_update(zone_id, records: list, domain, record_type='A', ttl=60):
 
 
 def get_discovery_instances(discovery_token):
-    instances = requests.get('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, settings.FLYNN_DISCOVERY_TOKEN)).json()
+    instances = requests.get('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, discovery_token)).json()
     return instances
 
 
 def update_discovery_instances(discovery_token, instance_data: dict):
     headers = {'Content-Type': 'application/json'}
-    return requests.post('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, settings.FLYNN_DISCOVERY_TOKEN), data = json.dumps(instance_data), headers=headers)
+    return requests.post('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, discovery_token), data=json.dumps(instance_data), headers=headers)

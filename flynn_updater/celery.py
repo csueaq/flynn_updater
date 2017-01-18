@@ -50,7 +50,9 @@ worker.conf.beat_schedule = {
 
 @worker.task(name='flynn_dns_update')
 def flynn_dns_update():
-    addrs = get_instance_public_addr(get_instances([settings.AWS_AUTOSCALING_GROUP]))
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_public_addr(running_instances)
     logger.info(
         'DNS update: %s (%s) with record %s' % (settings.AWS_ROUTE53_DOMAIN, settings.AWS_ROUTE53_ZONE, addrs))
     record_set = []
@@ -114,5 +116,5 @@ def flynn_update_discovery_instances():
                 instance_exist = True
         if not instance_exist:
             instance_data['data']['name'] = addr
-            instance_data['data']['url'] = urlparse('http://%s:1113' %addr).geturl()
+            instance_data['data']['url'] = urlparse('http://%s:1113' % addr).geturl()
             update_discovery_instances(settings.FLYNN_DISCOVERY_TOKEN, instance_data)
