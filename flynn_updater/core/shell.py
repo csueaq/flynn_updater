@@ -17,37 +17,37 @@ def execute(cmd, shell=True):
 
 
 def flynn_cli_init():
-    install = 'L=/usr/local/bin/flynn && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L'
-    setup = 'flynn cluster add -p %s default %s %s' % (settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
-    if not execute('which flynn')[0]:
+    install = 'L=%s && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L' % settings.FLYNN_PATH
+    setup = '%s cluster add -p %s default %s %s' % (settings.FLYNN_PATH, settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
+    if not execute('ls %s' % settings.FLYNN_PATH)[0]:
         execute(install)
         execute(setup)
 
 
 def flynn_cli_update():
-    execute('flynn update')
+    execute('%s update' % settings.FLYNN_PATH)
 
 
 def get_apps():
-    return execute('flynn apps | grep -v NAME | awk \'{print $2}\'')
+    return execute('%s apps | grep -v NAME | awk \'{print $2}\'' % settings.FLYNN_PATH)
 
 
 def get_app_release(app):
-    return execute('flynn -a %s release -q' % app)
+    return execute('%s -a %s release -q' % (settings.FLYNN_PATH, app))
 
 
 def get_app_current_release(app):
-    return json.loads(execute('flynn -a app release show --json' % app)[0])['id']
+    return json.loads(execute('%s -a %s release show --json' % (settings.FLYNN_PATH, app))[0])['id']
 
 
 def delete_app_release(app, release):
-    return execute('flynn -a %s release delete -y %s' % (app, release))
+    return execute('%s -a %s release delete -y %s' % (settings.FLYNN_PATH, app, release))
 
 
 def get_app_env(app):
-    return execute('flynn -a %s env' % app)
+    return execute('%s -a %s env' % (settings.FLYNN_PATH, app))
 
 
 def set_app_env(app, envs: list):
     envars = ' \\'.join(envs)
-    return execute('flynn -a %s env set %s' % (app, envars))
+    return execute('%s -a %s env set %s' % (settings.FLYNN_PATH, app, envars))

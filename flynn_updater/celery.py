@@ -116,7 +116,7 @@ def flynn_s3_store():
         logger.info('S3 blobstore is configure to use S3 bucket %s in %s.' % (settings.S3_BLOBSTORE, settings.AWS_DEFAULT_REGION))
         set_app_env('blobstore', s3_params)
         logger.info('Migrating local blobstore to S3 bucket %s' % settings.S3_BLOBSTORE)
-        execute('flynn -a blobstore run /bin/flynn-blobstore migrate --delete')
+        execute('%s -a blobstore run /bin/flynn-blobstore migrate --delete' % settings.FLYNN_PATH)
 
 
 @worker.task(name='flynn_cli_update')

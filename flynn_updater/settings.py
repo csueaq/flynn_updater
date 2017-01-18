@@ -144,6 +144,7 @@ DJANGO_LOG_LEVEL = env('DJANGO_LOG_LEVEL', default='INFO')
 S3_BLOBSTORE = env('S3_BLOBSTORE')
 FLYNN_DISCOVERY_TOKEN = env('FLYNN_DISCOVERY_TOKEN')
 FLYNN_DISCOVERY_URL = env('FLYNN_DISCOVERY_URL', default='https://discovery.flynn.io/clusters')
+FLYNN_PATH = env('FLYNN_PATH', default='/app/flynn')
 
 # Celery settings
 CELERY_BROKER_URL = REDIS_URL
