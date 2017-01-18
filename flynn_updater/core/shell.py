@@ -7,8 +7,7 @@ from celery.utils.log import logger
 def execute(cmd, shell=True):
     run = None
     try:
-        run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               universal_newlines=True)
+        run = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         output = run.stdout.read().rstrip().split("\n")
     except subprocess.CalledProcessError:
         error = run.stderr.read().rstrip().split("\n")
@@ -19,8 +18,7 @@ def execute(cmd, shell=True):
 
 def flynn_cli_init():
     install = 'L=/usr/local/bin/flynn && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L'
-    setup = 'flynn cluster add -p %s default %s %s' % (
-        settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
+    setup = 'flynn cluster add -p %s default %s %s' % (settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_PIN)
     if not execute('which flynn')[0]:
         execute(install)
         execute(setup)
