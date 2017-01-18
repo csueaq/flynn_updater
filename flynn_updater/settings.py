@@ -142,6 +142,8 @@ REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 DEBUG = env('DEBUG', default=False)
 DJANGO_LOG_LEVEL = env('DJANGO_LOG_LEVEL', default='INFO')
 S3_BLOBSTORE = env('S3_BLOBSTORE')
+FLYNN_DISCOVERY_TOKEN = env('FLYNN_DISCOVERY_TOKEN')
+FLYNN_DISCOVERY_URL = env('FLYNN_DISCOVERY_URL', default='https://discovery.flynn.io/clusters')
 
 # Celery settings
 CELERY_BROKER_URL = REDIS_URL

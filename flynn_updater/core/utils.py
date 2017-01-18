@@ -1,5 +1,8 @@
 import datetime
 import boto3
+import json
+import requests
+from django.conf import settings
 
 asg = boto3.client('autoscaling')
 ec2 = boto3.resource('ec2')
@@ -41,3 +44,13 @@ def dns_update(zone_id, records: list, domain, record_type='A', ttl=60):
             }]
         }
     )
+
+
+def get_discovery_instances(discovery_token):
+    instances = requests.get('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, settings.FLYNN_DISCOVERY_TOKEN)).json()
+    return instances
+
+
+def update_discovery_instances(discovery_token, instance_data: dict):
+    headers = {'Content-Type': 'application/json'}
+    return requests.post('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, settings.FLYNN_DISCOVERY_TOKEN), data = json.dumps(instance_data), headers=headers)

@@ -20,6 +20,7 @@ python-dateutil==2.6.0
 python-env==1.0.0
 pytz==2016.10
 redis==2.10.5
+requests==2.12.4
 s3transfer==0.1.10
 six==1.10.0
 vine==1.1.3

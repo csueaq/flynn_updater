@@ -5,6 +5,7 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
+from urllib.parse import urlparse
 
 from flynn_updater.core.utils import *
 from flynn_updater.core.shell import *
@@ -99,3 +100,19 @@ def flynn_s3_store():
 @worker.task(name='flynn_cli_update')
 def flynn_cli_update():
     flynn_cli_update()
+
+
+@worker.task(name='flynn_update_discovery_instances')
+def flynn_update_discovery_instances():
+    discovered_instances = get_discovery_instances(settings.FLYNN_DISCOVERY_TOKEN)
+    asg_instances = get_instance_private_addr(get_instances([settings.AWS_AUTOSCALING_GROUP]))
+    for addr in asg_instances:
+        instance_exist = False
+        instance_data = {'data': {}}
+        for instance in discovered_instances['data']:
+            if addr in urlparse(instance['url']).hostname:
+                instance_exist = True
+        if not instance_exist:
+            instance_data['data']['name'] = addr
+            instance_data['data']['url'] = urlparse('http://%s:1113' %addr).geturl()
+            update_discovery_instances(settings.FLYNN_DISCOVERY_TOKEN, instance_data)
