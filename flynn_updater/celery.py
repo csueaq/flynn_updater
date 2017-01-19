@@ -30,6 +30,11 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
+    'Flynn discoverd update': {
+        'task': 'flynn_update_discoverd_peers',
+        'schedule': 600,
+        'args': ()
+    },
     'Flynn remote dead node': {
         'task': 'flynn_demote_dead_node',
         'schedule': 1800.0,
@@ -134,12 +139,20 @@ def flynn_cli_update():
 @worker.task(name='flynn_update_discoverd_peers')
 def flynn_update_discoverd_peers():
     flynn_cli_init()
-    discoverd_peers = 'DISCOVERD_PEERS='
+    discoverd = get_app_release_json('discoverd')
+    exist_peers = discoverd['env']['DISCOVERD_PEERS'].replace(':1111', '').split(',')
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
-    addrs = get_instance_public_addr(running_instances)
+    addrs = get_instance_private_addr(running_instances)
+    update_peers = []
+    update_required = False
     for I in addrs:
-        discoverd_peers += I + ':1111,'
-    logger.info('discoverd updated with %s' % discoverd_peers)
-    set_app_env('discoverd', [discoverd_peers])
+        update_peers.append(I + ':1111')
+        if I not in exist_peers:
+            logger.info('discoverd found new node: %s' % I)
+            update_required = True
+    if update_required:
+        discoverd['env']['DISCOVERD_PEERS'] = ','.join(update_peers)
+        update_app_release('discoverd', discoverd)
+        logger.info('discoverd updated with %s' % update_peers)
 

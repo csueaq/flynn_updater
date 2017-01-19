@@ -48,6 +48,17 @@ def get_app_env(app):
     return execute('%s -a %s env' % (settings.FLYNN_PATH, app))
 
 
+def get_app_release_json(app, id=''):
+    return json.loads(execute('%s -a %s release show --json %s' % (settings.FLYNN_PATH, app, id))[0])
+
+
+def update_app_release(app, release: json, id='', clean=False):
+    file_path = '/tmp/%s-release.json' % app
+    file_cmd = 'echo \'%s\' > %s' % (json.dumps(release), file_path)
+    execute(file_cmd)
+    return execute('%s -a %s release update %s %s' % (settings.FLYNN_PATH, app, file_path, id))
+
+
 def set_app_env(app, envs: list):
     envars = ' \\'.join(envs)
     return execute('%s -a %s env set %s' % (settings.FLYNN_PATH, app, envars))
