@@ -98,7 +98,9 @@ def flynn_demote_dead_node():
     running_instances = get_instances_by_state(asg_instances)
     dead_instances = get_instances_by_state(asg_instances, 'terminated')
     for dead_instance in dead_instances:
+        logger.info('Dead node detected: %s' % dead_instance['InstanceId'])
         for running_instance in running_instances:
+            logger.info('Dead node removed: %s' % dead_instance['InstanceId'])
             ssh_connect(get_instance_private_addr([running_instance])[0], settings.SSH_USER, settings.SSH_KEY)
             ssh_execute("sudo flynn-host demote --force %s" % get_instance_private_addr([dead_instance])[0])
             ssh_close()
@@ -125,6 +127,7 @@ def flynn_s3_store():
 
 @worker.task(name='flynn_cli_update')
 def flynn_cli_update():
+    logger.info('Flynn-CLI upgrade.')
     flynn_cli_update()
 
 
