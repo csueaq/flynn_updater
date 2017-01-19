@@ -30,11 +30,6 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
-    'Flynn discoverd update': {
-        'task': 'flynn_update_discoverd_peers',
-        'schedule': 60.0,
-        'args': ()
-    },
     'Flynn remote dead node': {
         'task': 'flynn_demote_dead_node',
         'schedule': 1800.0,
