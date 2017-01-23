@@ -77,24 +77,35 @@ def get_rds_securitygroup(rds_id):
     return rds.describe_db_instances(DBInstanceIdentifier=rds_id)['DBInstances'][0]['VpcSecurityGroups'][0]['VpcSecurityGroupId']
 
 
+def get_security_group_rules(sg_id):
+    security_group = ec2.SecurityGroup(sg_id)
+    return security_group.ip_permissions
+
+
 def add_security_group_rule(sg_id, ip, port, proto='tcp'):
     security_group = ec2.SecurityGroup(sg_id)
-    return security_group.authorize_ingress(
-        IpProtocol=proto,
-        FromPort=port,
-        ToPort=port,
-        CidrIp='%s/32' % ip
-    )
+    rules = get_security_group_rules(sg_id)
+    for rule in rules:
+        if '%s/32' % ip not in [i['CidrIp'] for i in rule['IpRanges']]:
+            security_group.authorize_ingress(
+                IpProtocol=proto,
+                FromPort=port,
+                ToPort=port,
+                CidrIp='%s/32' % ip
+            )
 
 
 def remove_security_group_rule(sg_id, ip, port, proto='tcp'):
     security_group = ec2.SecurityGroup(sg_id)
-    return security_group.revoke_ingress(
-        IpProtocol=proto,
-        FromPort=port,
-        ToPort=port,
-        CidrIp='%s/32' % ip
-    )
+    rules = get_security_group_rules(sg_id)
+    for rule in rules:
+        if '%s/32' % ip in [i['CidrIp'] for i in rule['IpRanges']] and port is rule['ToPort']:
+            security_group.revoke_ingress(
+                IpProtocol=proto,
+                FromPort=port,
+                ToPort=port,
+                CidrIp='%s/32' % ip
+            )
 
 
 def get_route53_records(zone_id, domain, record_type='A'):
