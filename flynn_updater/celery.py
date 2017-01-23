@@ -185,5 +185,6 @@ def flynn_rds_db():
             ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "CREATE DATABASE %s OWNER=%s"' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, settings.DB_USER))
             ssh_execute('PGPASSWORD=%s pg_restore -h %s -U %s -d %s < %s.psql' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, app))
             ssh_execute('rm -f %s.psql' % app)
+            ssh_execute('flynn cluster remove default')
             ssh_close()
             set_app_env(app, [app_pg_host, app_pg_database, app_pg_user, app_pg_password, app_database_url])
