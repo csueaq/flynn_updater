@@ -213,6 +213,7 @@ def flynn_rds_security_group_update():
         logger.info('Removing dead node (%s) RDS access.' % addr)
         remove_security_group_rule(rds_security_group, addr, 5432)
     for addr in addrs:
-        logger.info('Adding new node (%s) RDS access.' % addr)
+        if addr not in dns_records:
+            logger.info('Adding new node (%s) RDS access.' % addr)
         add_security_group_rule(rds_security_group, addr, 5432)
 
