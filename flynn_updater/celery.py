@@ -180,7 +180,7 @@ def flynn_rds_db():
         app_pg_database = 'PGDATABASE=%s' % app
         app_pg_user = 'PGUSER=%s' % settings.DB_USER
         app_pg_password = 'PGPASSWORD=%s' % settings.DB_PASSWORD
-        app_database_url = 'postgres://%s:%s@%s:%s/%s%s' % (settings.DB_USER, settings.DB_PASSWORD, rd_endpoint, settings.DB_PORT, app, settings.DB_OPTS)
+        app_database_url = 'DATABASE_URL=postgres://%s:%s@%s:%s/%s%s' % (settings.DB_USER, settings.DB_PASSWORD, rd_endpoint, settings.DB_PORT, app, settings.DB_OPTS)
         app_env = get_app_env(app)
         if app_pg_host not in app_env or app_pg_database not in app_env or app_pg_user not in app_env or app_pg_password not in app_env or app_database_url not in app_env:
             logger.info('Flynn %s is not configured to use RDS.' % app)
@@ -196,7 +196,7 @@ def flynn_rds_db():
             ssh_execute('rm -f %s.psql' % app)
             ssh_execute('flynn cluster remove default')
             ssh_close()
-            logger.info('Configuring Flynn %s to use RDS database.' % app)
+            logger.info('Configuring Flynn %s to use RDS database (%s).' % (app, app_database_url))
             set_app_env(app, [app_pg_host, app_pg_database, app_pg_user, app_pg_password, app_database_url])
 
 
