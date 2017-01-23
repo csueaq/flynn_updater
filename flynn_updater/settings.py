@@ -146,6 +146,14 @@ S3_BLOBSTORE = env('S3_BLOBSTORE')
 FLYNN_DISCOVERY_TOKEN = env('FLYNN_DISCOVERY_TOKEN')
 FLYNN_DISCOVERY_URL = env('FLYNN_DISCOVERY_URL', default='https://discovery.flynn.io/clusters')
 FLYNN_PATH = env('FLYNN_PATH', default='/app/flynn')
+DB_HOST = env('DB_HOST')
+DB_USER = env('DB_USER')
+DB_PASSWORD = env('DB_PASSWORD')
+DB_OPTS = env('DB_OPTS', default='?sslmode=require')
+DB_PORT = env('DB_PORT', default=5432)
+
+FLYNN_CLI_INSTALL = 'L=%s && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L' % FLYNN_PATH
+FLYNN_CLI_SETUP = '%s cluster add -p %s default %s %s' % (FLYNN_PATH, FLYNN_PIN, AWS_ROUTE53_DOMAIN, FLYNN_KEY)
 
 # Celery settings
 CELERY_BROKER_URL = REDIS_URL

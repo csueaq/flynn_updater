@@ -6,6 +6,7 @@ from celery import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from urllib.parse import urlparse
+from random import randint
 
 from flynn_updater.core.utils import *
 from flynn_updater.core.shell import *
@@ -47,6 +48,11 @@ worker.conf.beat_schedule = {
     },
     'Flynn S3 datastore': {
         'task': 'flynn_s3_store',
+        'schedule': 300.0,
+        'args': ()
+    },
+    'Flynn RDS database': {
+        'task': 'flynn_rds_db',
         'schedule': 300.0,
         'args': ()
     },
@@ -156,3 +162,28 @@ def flynn_update_discoverd_peers():
         update_app_release('discoverd', discoverd)
         logger.info('discoverd updated with %s' % update_peers)
 
+
+@worker.task(name='flynn_rds_db')
+def flynn_rds_db():
+    apps = ['blobstore', 'router', 'controller']
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_public_addr(running_instances)
+    flynn_cli_init()
+    for app in apps:
+        app_pg_host = 'PGHOST=%s' % settings.DB_HOST
+        app_pg_database = 'PGDATABASE=%s' % app
+        app_pg_user = 'PGUSER=%s' % settings.DB_USER
+        app_pg_password = 'PGPASSWORD=%s' % settings.DB_PASSWORD
+        app_database_url = 'postgres://%s:%s@%s:%s/%s%s' % (settings.DB_USER, settings.DB_PASSWORD, settings.DB_HOST, settings.DB_PORT, app, settings.DB_OPTS)
+        app_env = get_app_env(app)
+        if app_pg_host not in app_env or app_pg_database not in app_env or app_pg_user not in app_env or app_pg_password not in app_env or app_database_url not in app_env:
+            ssh_connect(addrs[randint(0, len(addrs) - 1)], settings.SSH_USER, settings.SSH_KEY)
+            ssh_execute('flynn cluster add -p %s default %s %s' % (settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY))
+            ssh_execute('flynn -a %s pg dump -q -f %s.psql' % (app, app))
+            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "DROP DATABASE IF EXISTS %s"' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app))
+            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "CREATE DATABASE %s OWNER=%s"' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, settings.DB_USER))
+            ssh_execute('PGPASSWORD=%s pg_restore -h %s -U %s -d %s < %s.psql' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, app))
+            ssh_execute('rm -f %s.psql' % app)
+            ssh_close()
+            set_app_env(app, [app_pg_host, app_pg_database, app_pg_user, app_pg_password, app_database_url])
