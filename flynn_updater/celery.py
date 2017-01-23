@@ -31,6 +31,11 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
+    'Flynn RDS security group update': {
+        'task': 'flynn_rds_security_group_update',
+        'schedule': 60.0,
+        'args': ()
+    },
     'Flynn discoverd update': {
         'task': 'flynn_update_discoverd_peers',
         'schedule': 600,
@@ -69,8 +74,7 @@ def flynn_dns_update():
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
     addrs = get_instance_public_addr(running_instances)
-    logger.info(
-        'DNS update: %s (%s) with record %s' % (settings.AWS_ROUTE53_DOMAIN, settings.AWS_ROUTE53_ZONE, addrs))
+    logger.info('DNS update: %s (%s) with record %s' % (settings.AWS_ROUTE53_DOMAIN, settings.AWS_ROUTE53_ZONE, addrs))
     record_set = []
     for addr in addrs:
         record_set.append({'Value': addr})
@@ -107,14 +111,14 @@ def flynn_gc():
 def flynn_demote_dead_node():
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_private_addr(running_instances)
     dead_instances = get_instances_by_state(asg_instances, 'terminated')
     for dead_instance in dead_instances:
         logger.info('Dead node detected: %s' % dead_instance['InstanceId'])
-        for running_instance in running_instances:
-            logger.info('Dead node removed: %s' % dead_instance['InstanceId'])
-            ssh_connect(get_instance_private_addr([running_instance])[0], settings.SSH_USER, settings.SSH_KEY)
-            ssh_execute("sudo flynn-host demote --force %s" % get_instance_private_addr([dead_instance])[0])
-            ssh_close()
+        ssh_connect(addrs[randint(0, len(addrs) - 1)], settings.SSH_USER, settings.SSH_KEY)
+        ssh_execute("sudo flynn-host demote --force %s" % get_instance_private_addr([dead_instance])[0])
+        logger.info('Dead node removed: %s' % dead_instance['InstanceId'])
+        ssh_close()
 
 
 @worker.task(name='flynn_s3_store')
@@ -169,13 +173,14 @@ def flynn_rds_db():
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
     addrs = get_instance_public_addr(running_instances)
+    rd_endpoint = get_rds_endpoint(settings.RDS_DB_ID)
     flynn_cli_init()
     for app in apps:
-        app_pg_host = 'PGHOST=%s' % settings.DB_HOST
+        app_pg_host = 'PGHOST=%s' % rd_endpoint
         app_pg_database = 'PGDATABASE=%s' % app
         app_pg_user = 'PGUSER=%s' % settings.DB_USER
         app_pg_password = 'PGPASSWORD=%s' % settings.DB_PASSWORD
-        app_database_url = 'postgres://%s:%s@%s:%s/%s%s' % (settings.DB_USER, settings.DB_PASSWORD, settings.DB_HOST, settings.DB_PORT, app, settings.DB_OPTS)
+        app_database_url = 'postgres://%s:%s@%s:%s/%s%s' % (settings.DB_USER, settings.DB_PASSWORD, rd_endpoint, settings.DB_PORT, app, settings.DB_OPTS)
         app_env = get_app_env(app)
         if app_pg_host not in app_env or app_pg_database not in app_env or app_pg_user not in app_env or app_pg_password not in app_env or app_database_url not in app_env:
             logger.info('Flynn %s is not configured to use RDS.' % app)
@@ -184,12 +189,30 @@ def flynn_rds_db():
             ssh_execute('flynn cluster add -p %s default %s %s' % (settings.FLYNN_PIN, settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY))
             ssh_execute('flynn -a %s pg dump -q -f %s.psql' % (app, app))
             logger.info('Create Flynn %s RDS database.' % app)
-            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "DROP DATABASE IF EXISTS %s"' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app))
-            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "CREATE DATABASE %s OWNER=%s"' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, settings.DB_USER))
+            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "DROP DATABASE IF EXISTS %s"' % (settings.DB_PASSWORD, rd_endpoint, settings.DB_USER, app))
+            ssh_execute('PGPASSWORD=%s psql -h %s -U %s -c "CREATE DATABASE %s OWNER=%s"' % (settings.DB_PASSWORD, rd_endpoint, settings.DB_USER, app, settings.DB_USER))
             logger.info('Migrate Flynn %s RDS database.' % app)
-            ssh_execute('PGPASSWORD=%s pg_restore -h %s -U %s -d %s < %s.psql' % (settings.DB_PASSWORD, settings.DB_HOST, settings.DB_USER, app, app))
+            ssh_execute('PGPASSWORD=%s pg_restore -h %s -U %s -d %s < %s.psql' % (settings.DB_PASSWORD, rd_endpoint, settings.DB_USER, app, app))
             ssh_execute('rm -f %s.psql' % app)
             ssh_execute('flynn cluster remove default')
             ssh_close()
             logger.info('Configuring Flynn %s to use RDS database.' % app)
             set_app_env(app, [app_pg_host, app_pg_database, app_pg_user, app_pg_password, app_database_url])
+
+
+@worker.task(name='flynn_rds_security_group_update')
+def flynn_rds_security_group_update():
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_public_addr(running_instances)
+    dead_instances = get_instances_by_state(asg_instances, 'terminated')
+    dead_addrs = get_instance_public_addr(dead_instances)
+    dns_records = get_route53_records(zone_id=settings.AWS_ROUTE53_ZONE, domain=settings.AWS_ROUTE53_DOMAIN)
+    rds_security_group = get_rds_securitygroup(settings.RDS_DB_ID)
+    for addr in dead_addrs:
+        logger.info('Removing dead node (%s) RDS access.' % addr)
+        remove_security_group_rule(rds_security_group, addr, 5432)
+    for addr in addrs:
+        if addr not in dns_records:
+            logger.info('Adding new node (%s) RDS access.' % addr)
+            add_security_group_rule(rds_security_group, addr, 5432)

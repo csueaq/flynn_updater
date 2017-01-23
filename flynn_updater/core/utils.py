@@ -7,6 +7,7 @@ from django.conf import settings
 asg = boto3.client('autoscaling')
 ec2 = boto3.resource('ec2')
 dns = boto3.client('route53')
+rds = boto3.client('rds')
 
 
 def get_instances(asg_id: list):
@@ -66,3 +67,35 @@ def get_discovery_instances(discovery_token):
 def update_discovery_instances(discovery_token, instance_data: dict):
     headers = {'Content-Type': 'application/json'}
     return requests.post('%s/%s/instances' % (settings.FLYNN_DISCOVERY_URL, discovery_token), data=json.dumps(instance_data), headers=headers)
+
+
+def get_rds_endpoint(rds_id):
+    return rds.describe_db_instances(DBInstanceIdentifier=rds_id)['DBInstances'][0]['Endpoint']['Address']
+
+
+def get_rds_securitygroup(rds_id):
+    return rds.describe_db_instances(DBInstanceIdentifier=rds_id)['DBInstances'][0]['VpcSecurityGroups'][0]['VpcSecurityGroupId']
+
+
+def add_security_group_rule(sg_id, ip, port, proto='tcp'):
+    security_group = ec2.SecurityGroup(sg_id)
+    return security_group.authorize_ingress(
+        IpProtocol=proto,
+        FromPort=port,
+        ToPort=port,
+        CidrIp='%s/32' % ip
+    )
+
+
+def remove_security_group_rule(sg_id, ip, port, proto='tcp'):
+    security_group = ec2.SecurityGroup(sg_id)
+    return security_group.revoke_ingress(
+        IpProtocol=proto,
+        FromPort=port,
+        ToPort=port,
+        CidrIp='%s/32' % ip
+    )
+
+
+def get_route53_records(zone_id, domain, record_type='A'):
+    return dns.test_dns_answer(HostedZoneId=zone_id, RecordName=domain, RecordType=record_type)['RecordData']
