@@ -56,11 +56,11 @@ worker.conf.beat_schedule = {
         'schedule': 300.0,
         'args': ()
     },
-    'Flynn RDS database': {
-        'task': 'flynn_rds_db',
-        'schedule': 300.0,
-        'args': ()
-    },
+    # 'Flynn RDS database': {
+    #     'task': 'flynn_rds_db',
+    #     'schedule': 300.0,
+    #     'args': ()
+    # },
     'Flynn CLI update': {
         'task': 'flynn_cli_update',
         'schedule': crontab(hour=0, minute=30, day_of_week='*'),
