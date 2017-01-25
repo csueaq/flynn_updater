@@ -255,4 +255,5 @@ def aws_elb_update():
         for instance in running_instances:
             instances.append(instance['InstanceId'])
         for elb in elbs:
+            logger.info('Update ELB %s with instances %s' % (elb, instances))
             register_instances_with_elb(elb, instances)
