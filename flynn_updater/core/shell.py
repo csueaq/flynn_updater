@@ -30,6 +30,18 @@ def get_apps():
     return execute('%s apps | grep -v NAME | awk \'{print $2}\'' % settings.FLYNN_PATH)
 
 
+def get_app_id(app):
+    return execute('%s apps | grep %s | awk \'{print $1}\'' % (settings.FLYNN_PATH, app))[0]
+
+
+def get_non_system_apps():
+    apps = []
+    for app in get_apps():
+        if not int(execute('%s -a %s meta | grep flynn-system-app | grep -c true' % (settings.FLYNN_PATH, app))[0]):
+            apps.append(app)
+    return apps
+
+
 def get_app_release(app):
     return execute('%s -a %s release -q' % (settings.FLYNN_PATH, app))
 

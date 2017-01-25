@@ -48,6 +48,11 @@ worker.conf.beat_schedule = {
     },
     'Flynn garbage collection': {
         'task': 'flynn_gc',
+        'schedule': crontab(hour=6, minute=30, day_of_week=6),
+        'args': ()
+    },
+    'Flynn log GC': {
+        'task': 'flynn_log_gc',
         'schedule': crontab(hour=7, minute=30, day_of_week=6),
         'args': ()
     },
@@ -216,4 +221,20 @@ def flynn_rds_security_group_update():
         if addr not in dns_records:
             logger.info('Adding new node (%s) RDS access.' % addr)
         add_security_group_rule(rds_security_group, addr, 5432)
+
+
+@worker.task(name='flynn_log_gc')
+def flynn_log_gc():
+    asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+    running_instances = get_instances_by_state(asg_instances)
+    addrs = get_instance_public_addr(running_instances)
+    for addr in addrs:
+        logger.info('Clean up log on %s' %addr)
+        ssh_connect(addr, settings.SSH_USER, settings.SSH_KEY)
+        ssh_execute('find /var/log/flynn -mtime +7 -iname *.log ! -iname flynn-host.log -delete')
+        ssh_close()
+    for app in get_apps():
+        app_id = get_app_id(app)
+        logger.info('Clean up %s (%s) logs' % (app, app_id))
+        execute("%s -a controller pg psql -- -c \" delete from job_cache where app_id='%s' and state!='up' andcreated_at < now() - interval '7 days'\"" % (settings.FLYNN_PATH, app_id))
 
