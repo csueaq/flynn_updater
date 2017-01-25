@@ -231,7 +231,7 @@ def flynn_log_gc():
     for addr in addrs:
         logger.info('Clean up log on %s' %addr)
         ssh_connect(addr, settings.SSH_USER, settings.SSH_KEY)
-        ssh_execute('find /var/log/flynn -mtime +7 -iname *.log ! -iname flynn-host.log -delete')
+        ssh_execute('sudo find /var/log/flynn -mtime +7 -iname *.log ! -iname flynn-host.log -delete')
         ssh_close()
     for app in get_apps():
         app_id = get_app_id(app)
