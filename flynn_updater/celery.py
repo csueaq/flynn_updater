@@ -225,6 +225,7 @@ def flynn_rds_security_group_update():
 
 @worker.task(name='flynn_log_gc')
 def flynn_log_gc():
+    flynn_cli_init()
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
     addrs = get_instance_public_addr(running_instances)
