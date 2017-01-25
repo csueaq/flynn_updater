@@ -31,6 +31,11 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
+    'Flynn ELB update': {
+        'task': 'aws_elb_update',
+        'schedule': 60.0,
+        'args': ()
+    },
     'Flynn discoverd update': {
         'task': 'flynn_update_discoverd_peers',
         'schedule': 600,
@@ -239,3 +244,15 @@ def flynn_log_gc():
         logger.info('Clean up %s (%s) logs' % (app, app_id))
         execute("%s -a controller pg psql -- -c \" delete from job_cache where app_id='%s' and state!='up' andcreated_at < now() - interval '7 days'\"" % (settings.FLYNN_PATH, app_id))
 
+
+@worker.task(name='aws_elb_update')
+def aws_elb_update():
+    if settings.ELB is not '':
+        elbs = settings.ELB.split(',')
+        asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
+        running_instances = get_instances_by_state(asg_instances)
+        instances = []
+        for instance in running_instances:
+            instances.append(instance['InstanceId'])
+        for elb in elbs:
+            register_instances_with_elb(elb, instances)

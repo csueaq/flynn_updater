@@ -8,6 +8,7 @@ asg = boto3.client('autoscaling')
 ec2 = boto3.resource('ec2')
 dns = boto3.client('route53')
 rds = boto3.client('rds')
+elb = boto3.client('elb')
 
 
 def get_instances(asg_id: list):
@@ -110,3 +111,13 @@ def remove_security_group_rule(sg_id, ip, port, proto='tcp'):
 
 def get_route53_records(zone_id, domain, record_type='A'):
     return dns.test_dns_answer(HostedZoneId=zone_id, RecordName=domain, RecordType=record_type)['RecordData']
+
+
+def register_instances_with_elb(elb_id, instances: list):
+    instances_list = []
+    for i in instances:
+        instances_list.append({'InstanceId': i})
+    return elb.register_instances_with_load_balancer(
+        LoadBalancerName=elb_id,
+        Instances=instances_list
+    )
