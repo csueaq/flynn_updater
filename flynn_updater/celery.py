@@ -31,11 +31,6 @@ worker.conf.beat_schedule = {
         'schedule': 60.0,
         'args': ()
     },
-    'Flynn RDS security group update': {
-        'task': 'flynn_rds_security_group_update',
-        'schedule': 60.0,
-        'args': ()
-    },
     'Flynn discoverd update': {
         'task': 'flynn_update_discoverd_peers',
         'schedule': 600,
@@ -64,6 +59,11 @@ worker.conf.beat_schedule = {
     # 'Flynn RDS database': {
     #     'task': 'flynn_rds_db',
     #     'schedule': 300.0,
+    #     'args': ()
+    # },
+    # 'Flynn RDS security group update': {
+    #     'task': 'flynn_rds_security_group_update',
+    #     'schedule': 60.0,
     #     'args': ()
     # },
     'Flynn CLI update': {
