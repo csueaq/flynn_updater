@@ -48,7 +48,7 @@ worker.conf.beat_schedule = {
     },
     'Flynn backup': {
         'task': 'flynn_backup',
-        'schedule': 60.0,
+        'schedule': 3600.0,
         'args': ()
     },
     'Flynn garbage collection': {
