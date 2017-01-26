@@ -2,8 +2,11 @@ import datetime
 import boto3
 import json
 import requests
+import io
 from django.conf import settings
+from celery.utils.log import get_task_logger
 
+logger = get_task_logger(__name__)
 asg = boto3.client('autoscaling')
 ec2 = boto3.resource('ec2')
 dns = boto3.client('route53')
@@ -129,5 +132,6 @@ def flynn_backup(s3_bucket):
     if backup.status_code == 200:
         backup_file = backup.headers['Content-Disposition'].split('; ')[1].split('=')[1].split('"')[1]
         file = io.BytesIO(backup.content)
+        logger.info('Backup Flynn cluster %s to %s/backup/%s' % (settings.AWS_ROUTE53_DOMAIN, settings.S3_BLOBSTORE, backup_file))
         return s3.upload_fileobj(file, s3_bucket, 'backup/%s' % backup_file)
 
