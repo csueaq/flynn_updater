@@ -9,6 +9,7 @@ ec2 = boto3.resource('ec2')
 dns = boto3.client('route53')
 rds = boto3.client('rds')
 elb = boto3.client('elb')
+s3 = boto3.client('s3')
 
 
 def get_instances(asg_id: list):
@@ -121,3 +122,12 @@ def register_instances_with_elb(elb_id, instances: list):
         LoadBalancerName=elb_id,
         Instances=instances_list
     )
+
+
+def flynn_backup(s3_bucket):
+    backup = requests.get('https://controller.%s/backup?key=%s' % (settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY), verify=False)
+    if backup.status_code == 200:
+        backup_file = backup.headers['Content-Disposition'].split('; ')[1].split('=')[1].split('"')[1]
+        file = io.BytesIO(backup.content)
+        return s3.upload_fileobj(file, s3_bucket, 'backup/%s' % backup_file)
+

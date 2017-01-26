@@ -46,6 +46,11 @@ worker.conf.beat_schedule = {
         'schedule': 1800.0,
         'args': ()
     },
+    'Flynn backup': {
+        'task': 'flynn_backup',
+        'schedule': 60.0,
+        'args': ()
+    },
     'Flynn garbage collection': {
         'task': 'flynn_gc',
         'schedule': crontab(hour=6, minute=30, day_of_week=6),
@@ -257,3 +262,9 @@ def aws_elb_update():
         for elb in elbs:
             logger.info('Update ELB %s with instances %s' % (elb, instances))
             register_instances_with_elb(elb, instances)
+
+
+@worker.task(name='flynn_backup')
+def flynn_backup():
+    flynn_backup(settings.S3_BLOBSTORE)
+
