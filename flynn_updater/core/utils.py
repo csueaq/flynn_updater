@@ -127,7 +127,7 @@ def register_instances_with_elb(elb_id, instances: list):
     )
 
 
-def flynn_backup(s3_bucket):
+def flynn_backup_to_s3(s3_bucket):
     backup = requests.get('https://controller.%s/backup?key=%s' % (settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY), verify=False)
     if backup.status_code == 200:
         backup_file = backup.headers['Content-Disposition'].split('; ')[1].split('=')[1].split('"')[1]

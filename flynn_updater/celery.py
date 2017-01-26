@@ -266,5 +266,5 @@ def aws_elb_update():
 
 @worker.task(name='flynn_backup')
 def flynn_backup():
-    flynn_backup(settings.S3_BLOBSTORE)
+    flynn_backup_to_s3(settings.S3_BLOBSTORE)
 
