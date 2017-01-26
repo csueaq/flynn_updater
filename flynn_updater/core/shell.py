@@ -23,7 +23,7 @@ def flynn_cli_init():
 
 
 def flynn_cli_update():
-    execute('%s update' % settings.FLYNN_PATH)
+    return execute('%s update' % settings.FLYNN_PATH)
 
 
 def get_apps():

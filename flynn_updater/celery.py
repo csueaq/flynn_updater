@@ -139,9 +139,9 @@ def flynn_s3_store():
     for var in blobstore:
         if 'DEFAULT_BACKEND=s3main' in var:
             s3_enabled = True
-            logger.info('S3 blobstore is not enabled.')
 
     if not s3_enabled:
+        logger.info('S3 blobstore is not enabled.')
         s3_params = ['BACKEND_S3MAIN="backend=s3 region=%s bucket=%s ec2_role=true"'
                      % (settings.AWS_DEFAULT_REGION, settings.S3_BLOBSTORE), 'DEFAULT_BACKEND=s3main']
         logger.info('S3 blobstore is configure to use S3 bucket %s in %s.' % (settings.S3_BLOBSTORE, settings.AWS_DEFAULT_REGION))
