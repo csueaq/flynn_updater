@@ -13,6 +13,7 @@ dns = boto3.client('route53')
 rds = boto3.client('rds')
 elb = boto3.client('elb')
 s3 = boto3.client('s3')
+s3_res = boto3.resource('s3')
 
 
 def get_instances(asg_id: list):
@@ -78,7 +79,7 @@ def get_rds_endpoint(rds_id):
     return rds.describe_db_instances(DBInstanceIdentifier=rds_id)['DBInstances'][0]['Endpoint']['Address']
 
 
-def get_rds_securitygroup(rds_id):
+def get_rds_security_group(rds_id):
     return rds.describe_db_instances(DBInstanceIdentifier=rds_id)['DBInstances'][0]['VpcSecurityGroups'][0]['VpcSecurityGroupId']
 
 
@@ -131,7 +132,11 @@ def flynn_backup_to_s3(s3_bucket):
     backup = requests.get('https://controller.%s/backup?key=%s' % (settings.AWS_ROUTE53_DOMAIN, settings.FLYNN_KEY), verify=False)
     if backup.status_code == 200:
         backup_file = backup.headers['Content-Disposition'].split('; ')[1].split('=')[1].split('"')[1]
-        file = io.BytesIO(backup.content)
+        backup_data = io.BytesIO(backup.content)
         logger.info('Backup Flynn cluster %s to %s/backup/%s' % (settings.AWS_ROUTE53_DOMAIN, settings.S3_BLOBSTORE, backup_file))
-        return s3.upload_fileobj(file, s3_bucket, 'backup/%s' % backup_file)
+        return s3.upload_fileobj(backup_data, s3_bucket, 'backup/%s' % backup_file)
+
+
+def get_latest_backup(s3_bucket):
+    return sorted(s3_res.Bucket(s3_bucket).objects.all().filter(Prefix='backup/'), key=lambda k: k.last_modified, reverse=True)[0].key
 

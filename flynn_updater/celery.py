@@ -223,7 +223,7 @@ def flynn_rds_security_group_update():
     dead_instances = get_instances_by_state(asg_instances, 'terminated')
     dead_addrs = get_instance_public_addr(dead_instances)
     dns_records = get_route53_records(zone_id=settings.AWS_ROUTE53_ZONE, domain=settings.AWS_ROUTE53_DOMAIN)
-    rds_security_group = get_rds_securitygroup(settings.RDS_DB_ID)
+    rds_security_group = get_rds_security_group(settings.RDS_DB_ID)
     for addr in dead_addrs:
         logger.info('Removing dead node (%s) RDS access.' % addr)
         remove_security_group_rule(rds_security_group, addr, 5432)
