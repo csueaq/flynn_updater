@@ -152,6 +152,7 @@ DB_PASSWORD = env('DB_PASSWORD')
 DB_OPTS = env('DB_OPTS', default='?sslmode=require')
 DB_PORT = env('DB_PORT', default=5432)
 ELB = env('ELB', default='')
+CLUSTER_PRIVATE = env('CLUSTER_PRIVATE', default=False)
 
 FLYNN_CLI_INSTALL = 'L=%s && curl -sSL -A "`uname -sp`" https://dl.flynn.io/cli | zcat >$L && chmod +x $L' % FLYNN_PATH
 FLYNN_CLI_SETUP = '%s cluster add -p %s default %s %s' % (FLYNN_PATH, FLYNN_PIN, AWS_ROUTE53_DOMAIN, FLYNN_KEY)

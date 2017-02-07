@@ -88,7 +88,11 @@ worker.conf.beat_schedule = {
 def flynn_dns_update():
     asg_instances = get_instances([settings.AWS_AUTOSCALING_GROUP])
     running_instances = get_instances_by_state(asg_instances)
-    addrs = get_instance_public_addr(running_instances)
+    if settings.CLUSTER_PRIVATE:
+        addrs = get_instance_private_addr(running_instances)
+    else:
+        addrs = get_instance_public_addr(running_instances)
+
     logger.info('DNS update: %s (%s) with record %s' % (settings.AWS_ROUTE53_DOMAIN, settings.AWS_ROUTE53_ZONE, addrs))
     record_set = []
     for addr in addrs:
